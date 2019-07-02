@@ -1,0 +1,13 @@
+8 0 1 0                                    9 0 3 0                             open function call 
+DIGI_CMD_READ_INPUT_SIGNALS		DIGI_CMD_IFLUSH_FIFO
+
+set_termios funtion call 
+0 0 C 0      2 0 0 0     1 0 3 0           3 0 0 0       4 0 0 0                    5 0 1 0                          A 0 1 0
+baud 9600    parity n  send word size 8   stopbit 1    input flow control  off    output flow control softcontrol    receive data enable  
+6 0 1 0    7 0 1 0digi_set_modem_signals(port, modem_signals, 1);
+
+
+
+0 0 13 0   5 0 0 0 set_termios funtion call again
+
+6 0 1 0    7 0 1 0
