@@ -21,9 +21,11 @@ typedef struct
 {
     int index;
     int baud;
+    int loopback;
     const char*  readFileName;
     const char*  writeFileName;
     const char*  devName;
+    const char*  loopbackAttrName;
 
 }ReadWriteThreadArgument;
 
@@ -157,8 +159,11 @@ void * readWritePort(void* data)
     const char* devname = p->devName;
     const char* sendfile = p->readFileName;
     const char* recvfile = p->writeFileName;
+    const char* loopattrname = p->loopbackAttrName;
     int index = p->index;
+    int loopback = p->loopback;
     int devfd = 0;
+    int loopfd = 0;
     int sendfd = 0;
     int recvfd = 0;
     int readsum = 0;
@@ -166,6 +171,7 @@ void * readWritePort(void* data)
     int writelength = 0;
     int length = 0;
     fd_set rset, wset;
+    char loopbool[2] = {'0','1'};
     unsigned char buffer[BULK_IN_SIZE] = {0};
 
 
@@ -177,6 +183,26 @@ void * readWritePort(void* data)
     }
     serial_init(devfd,p->baud);
 
+    //setup the loopback
+    loopfd = open(loopattrname,O_RDWR);
+    if(-1 == loopfd)
+    {
+        printf("can't open the loopback attribute %s\n",loopattrname);
+        pthread_exit(NULL);
+    }
+    if(loopback)
+    {
+       length = write(loopfd,&loopbool[1],1);
+    }
+    else
+    {
+       length = write(loopfd,&loopbool[0],1);
+    }
+    if(-1 == length)
+    {
+        printf("write  the loopback attribute failed\n");
+        pthread_exit(NULL);
+    }
 
     recvfd = open(recvfile, O_RDWR | O_CREAT | O_TRUNC,0666);
     if(-1 == recvfd)
@@ -269,27 +295,30 @@ int main(int argc, const char* argv[])
      *
      */
     int i = 0;
+    int loopback = 0;
     int base = 0;
     int numbers = 0;
     int baud = 0;
     int fds[PORT_NUMBERS] = {0};
     char devnames[PORT_NUMBERS][13] = {0};
     char recvfiles[PORT_NUMBERS][20] = {0};
+    char loopbackattr[PORT_NUMBERS][64] = {0};
     unsigned char mainloop[5];
     ReadWriteThreadArgument arguments[PORT_NUMBERS] = {0};
 
      /**
       * some arguments basic deal
       */
-   if(argc < 6)
+   if(argc < 7)
    {
-        printf("format is %s <base> <numbers> <sendfilename> <recvfilename> <baud0|1>\n",argv[0]);
+        printf("format is %s <base> <numbers> <sendfilename> <recvfilename> <baud0|1>  <loopback>\n",argv[0]);
         exit(-1);
    }
 
    base    = atoi(argv[1]);
    numbers = atoi(argv[2]);
    baud    = atoi(argv[5]);
+   loopback = atoi(argv[6]);
    if(numbers > 10 || numbers < 1)
    {
         printf("please input the reasonable digital from 1 to 10\n");
@@ -301,14 +330,17 @@ int main(int argc, const char* argv[])
    {
        snprintf(devnames[i],13,"/dev/ttyUSB%d",i);
        sprintf(recvfiles[i],"%s%d",argv[4],i);
+       snprintf(loopbackattr[i],39,"/sys/class/tty/ttyUSB%d/device/loopback",i);
 //       printf("devname is %s\n",devnames[i]);
 //       printf("recvfile is %s\n",recvfiles[i]);
 
        arguments[i].index = i;
        arguments[i].baud  = baud;
+       arguments[i].loopback = loopback;
        arguments[i].devName = devnames[i];
        arguments[i].readFileName = argv[3];
        arguments[i].writeFileName = recvfiles[i];
+       arguments[i].loopbackAttrName = loopbackattr[i];
 
        startThread(&arguments[i],0);
 
