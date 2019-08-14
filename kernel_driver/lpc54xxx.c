@@ -192,6 +192,7 @@ struct lpc_serial {
 
 struct lpc_port {
     spinlock_t                        lpcp_port_lock;
+    bool                              is_loopback;
     int                               lpcp_port_num;
     int                               lpcp_out_buf_len;
     unsigned char                     lpcp_out_buf[LPC_OUT_BUF_SIZE];
@@ -294,6 +295,61 @@ static struct usb_serial_driver * const serial_drivers[] = {
 };
 
 /* Functions */
+static ssize_t loopback_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    bool val;
+    unsigned long flags = 0;
+
+    struct usb_serial_port *port = to_usb_serial_port(dev);
+    struct lpc_port *priv = usb_get_serial_port_data(port);
+
+    spin_lock_irqsave(&priv->lpcp_port_lock,flags);
+    val = priv->is_loopback;
+    spin_unlock_irqrestore(&priv->lpcp_port_lock, flags);
+
+
+    return sprintf(buf, "%u\n", val);
+}
+
+static ssize_t loopback_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    bool val;
+    int ret;
+    int index = 0;
+    unsigned char oob_command[4];
+    unsigned long flags = 0;
+
+    struct usb_serial_port *port = to_usb_serial_port(dev);
+    struct lpc_port *priv = usb_get_serial_port_data(port);
+
+    index =  port->port_number;
+
+    ret = strtobool(buf, &val);
+    if (ret < 0)
+        return ret;
+
+    spin_lock_irqsave(&priv->lpcp_port_lock,flags);
+    priv->is_loopback = val;
+    spin_unlock_irqrestore(&priv->lpcp_port_lock, flags);
+    dev_warn(&port->dev, "-----loopback is = %d\n", val);
+    /* decide the current port whether in loopback mode */
+    oob_command[0] = LPC_CMD_LOCAL_LOOPBACK;
+    oob_command[1] = index;
+    oob_command[2] = val;
+    oob_command[3] = 0;
+
+    ret = lpc_write_oob_command(port, oob_command, 4, 1);
+    if(ret)
+    {
+        dev_warn(&port->dev, "lpc_write: write oob failed, ret=%d\n", ret);
+        return ret;
+    }
+
+    return count;
+}
+static DEVICE_ATTR_RW(loopback);
+
+
 static ssize_t port_number_show(struct device *dev,struct device_attribute *attr, char *buf)
 {
      struct usb_serial_port *port = to_usb_serial_port(dev);
@@ -333,6 +389,7 @@ static struct attribute *usb_serial_port_attrs[] = {
      &dev_attr_port_number.attr,
      &dev_attr_send_bytes.attr,
      &dev_attr_recv_bytes.attr,
+     &dev_attr_loopback.attr,
      NULL
 };
 ATTRIBUTE_GROUPS(usb_serial_port);
