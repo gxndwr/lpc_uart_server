@@ -1,21 +1,21 @@
 # lpc_uart_server
 
-基于LPC54018的 串口转多UART服务器
+USB to uart sever based on lpc54018
 
-| 路径                       | 说明                              |
-| -------------------------- | --------------------------------- |
-| hardware                   | 评估板原理图                      |
-| kernel driver              | USB to uart kernel 驱动           |
-| lpc_firmware_download_tool | 下载MCU固件的Linux端工具及MCU固件 |
-| user_space_test_program    | Linux用户空间USB-uart测试脚本     |
-| reference                  | 其他参考资料(不需要看)            |
-| misc                       | 其他(供参考)                      |
+| folder                     | description                                   |
+| -------------------------- | --------------------------------------------- |
+| hardware                   | hardware schematic                            |
+| kernel driver              | kernel driver sources                         |
+| lpc_firmware_download_tool | Linux side DFU download tool and MCU firmware |
+| user_space_test_program    | user space test program and demo              |
+| reference                  | other reference                               |
+| misc                       | other reference                               |
 
 
 
-## 如何使用
+## Getting Started
 
-### 添加USB驱动，编译Linux内核
+### Add USB kernel driver, compile kernel
 
 1. Copy file kernel_driver/lpc54xxx.c file to Linux kernel source directory drivers/usb/serial/
 2. Add below code to Linux kernel source file drivers/usb/serial/Makefile:
@@ -36,13 +36,13 @@ config USB_SERIAL_LPC54XXX
 
 4. On Linux kernel source folder, run ‘make menuconfig’ and select above item (“Linux kernel source”) to ‘*’, then compile the Linux kernel by executing ‘make’.
 
-### 下载LPC54018固件到目标板
+### Download MCU firmware
 
 Environment required for download tool (LPC_firmware_download_tool/dfu-utils):
 
-CPU:       arm64
+* CPU:       arm64
 
-SYSTEM:    linux
+* SYSTEM:    linux
 
 1. Copy the download folder  LPC_firmware_download_tool/*  to a arm64 platform (such as LS1021ATWR)’s directory /usr/bin/. Connect a USB cable between arm64 platform USB host port and target LPC board’s USB upstream port.
 
@@ -84,7 +84,7 @@ Done!
 Congratulations! Now the operation download firmware is successful. Host board (arm64) will begin re-enumerate LPC board as a special USB serial port device automatically.
 ```
 
-执行：
+run：
 
 ```
 root@ls1021atwr:/usr/bin/LPC_firmware_download_tool# ls /dev/ttyUSB
@@ -98,7 +98,7 @@ Besides, we also have implement a test program which can be run on arm64 platfor
 
 
 
-### 调试
+### Debug
 
 The device’s driver has added two files in sysfs to show the number of sending and receiving data (in bytes). The file named “send_bytes” means the data ttyUSBx device has sent since usb serial device got enumerated. Similarly, the file named “recv_bytes” means the data ttyUSBx device have received since usb serial device got enumerated.
 
@@ -116,9 +116,9 @@ root@ls1043ardb:/sys/bus/usb/devices/1-1.4:1.0/ttyUSB8# cat recv_bytes
 
 
 
-### MCU端
+### MCU side
 
-串口复用表：
+UART pinmux table:
 
 | 串口                    | PIN   | 复用功能 |
 | ----------------------- | ----- | -------- |
