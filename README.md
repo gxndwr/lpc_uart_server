@@ -5,9 +5,9 @@ USB to uart sever based on lpc54018
 | folder                     | description                                   |
 | -------------------------- | --------------------------------------------- |
 | hardware                   | hardware schematic                            |
-| kernel driver              | kernel driver sources                         |
+| kernel driver              | Linux kernel driver source files                    |
 | lpc_firmware_download_tool | Linux side DFU download tool and MCU firmware |
-| user_space_test_program    | user space test program and demo              |
+| user_space_test_program    | Linux user space program for test and demo    |
 | reference                  | other reference                               |
 | misc                       | other reference                               |
 
